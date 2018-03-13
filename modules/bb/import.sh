@@ -1,5 +1,5 @@
 declare -a __bb_import_paths=(".")
-declare -a __bb_import_imports=()
+declare -a __bb_import_imported=()
 declare -a __bb_import_package_names=()
 declare -a __bb_import_package_sources=()
 
@@ -7,21 +7,12 @@ declare -a __bb_import_package_sources=()
 function bb.import() {
   local script="${1}"
 
-  # don't re-source
-  if [[ " ${__bb_import_imports[@]} " =~ " ${script} " ]]; then
+  # already sourced: quit
+  if [[ " ${__bb_import_imported[@]} " =~ " ${script} " ]]; then
     return 0
   fi
 
-  IFS='/' local fragments=( "${script}" )
-
-  if [[
-    "${#fragments[@]}" -gt 1 &&
-    " ${__bb_import_package_names} " =~ " ${fragments[0]} "
-  ]]; then
-    (1>&2 echo "found a package module: ${fragments[0]} ${fragments:1:${#fragments[@]}}")
-  fi
-
-  local resolved=$( bb.import.__resolve_path "${script}" )
+  local resolved=$( bb.import.__resolve_module "${script}" )
 
   if test -z "${resolved}"; then
     (1>&2 echo "Unable to import \"${script}\": file not found.")
@@ -30,7 +21,7 @@ function bb.import() {
 
   source "${resolved}" || return 1
 
-  __bb_import_imports+=( "$script" )
+  __bb_import_imported+=( "$script" )
 }
 
 # (): void
@@ -52,15 +43,30 @@ function bb.import.resolve() {
 }
 
 # @private
-function bb.import.__resolve_path() {
+function bb.import.__resolve_module() {
+  local script="${1}"
+
+  if bb.import.__resolve_module_on_disk "${script}"; then
+    return 0
+  elif bb.import.__resolve_module_in_package "${script}"; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# @private
+function bb.import.__resolve_module_on_disk() {
   local script="${1}"
   local resolved
 
+  # absolute path
   if [[ "${script}" =~ ^/ ]]; then
     echo "${script}"
     return 0
   fi
 
+  # look through the modules on disk:
   for path in "${__bb_import_paths[@]}"; do
     resolved="${path}/${script}"
 
@@ -73,6 +79,36 @@ function bb.import.__resolve_path() {
   return 1
 }
 
+# @private
+function bb.import.__resolve_module_in_package() {
+  local script="${1}"
+  local resolved
+  local fragments
+  local pkg_id
+  local i
+
+  # potentially a package module:
+  IFS='/' fragments=( $(echo "${script}") )
+
+  pkg_id="${fragments[0]}"
+
+  if [[ "${#fragments[@]}" -gt 1 && " ${__bb_import_package_names[@]} " =~ " ${pkg_id} " ]]; then
+    for i in "${!__bb_import_package_names[@]}"; do
+      if [[ "${__bb_import_package_names[i]}" != "${pkg_id}" ]]; then
+        continue
+      fi
+
+      resolved="${__bb_import_package_sources[i]}/${script}"
+
+      if [[ -f "${resolved}" ]]; then
+        echo "${resolved}"
+        return 0
+      fi
+    done
+  fi
+
+  return 1
+}
 
 # @private
 #
