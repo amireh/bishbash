@@ -100,7 +100,7 @@ function tasks.read_wants() {
       h)
         __tasks_wants_help=true
       ;;
-      *) echo "Invalid option: -$OPTARG" 1>&2 ;;
+      *) printf "tasks: invalid option: -$OPTARG\n" 1>&2 ;;
     esac
   done
 
@@ -139,7 +139,7 @@ function tasks.run_all() {
   local stage="${2:-"up"}"
   local exit_status=0
 
-  invariant [ ! -z "${task_path}" ] "task directory must be provided!"
+  invariant $(test -n "${task_path}") "task directory must be provided!"
 
   shift 1
 
@@ -184,7 +184,7 @@ function tasks.print_help() {
     "-C"        "do not colorize the output"
   )
 
-  invariant [ ! -z "${task_path}" ] "task directory must be provided!"
+  invariant $(test -n "${task_path}") "task directory must be provided!"
 
   for task in "${__tasks_names[@]}"; do
     __tasks_latest_description=""

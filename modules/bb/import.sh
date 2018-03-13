@@ -21,7 +21,7 @@ function import() {
   local module=$( import.__resolve_module "${script}" )
 
   if [[ -z "${module}" || ! -s "${module}" ]]; then
-    (1>&2 echo "import: cannot find module \"${script}\"")
+    printf "import: cannot find module \"${script}\"\n" 1>&2
 
     if [[ $__import_pedantic ]]; then
       exit 1
@@ -176,11 +176,11 @@ function import.__resolve_module_from_github() {
   fi
 
   if [ ! -s "${disk_path}" ]; then
-    echo "import: downloading script \"${script}\" from github:" 1>&2
-    echo "import:     ${gh_url}" 1>&2
+    printf "import: downloading script \"${script}\" from github:\n" 1>&2
+    printf "import:     ${gh_url}\n" 1>&2
 
     curl -sS -f "${gh_url}" 1> "${disk_path}" || {
-      echo "import: could not retrieve module from github" 1>&2
+      printf "import: could not retrieve module from github\n" 1>&2
 
       return 1
     }
@@ -200,8 +200,9 @@ function import.__calculate_digest() {
   elif which md5sum >/dev/null; then
     echo "${1}" | md5sum | cut -d' ' -f1
   else
-    echo "import: unable to calculate digest, please ensure you have" 1>&2
-    echo "        any of the following programs installed: sha256sum, sha1sum, md5sum" 1>&2
+    printf "import: unable to calculate digest, please ensure you have\n" 1>&2
+    printf "        any of the following programs installed:\n" 1>&2
+    printf "        sha256sum, sha1sum, md5sum" 1>&2
 
     exit 1
   fi

@@ -13,7 +13,7 @@ RSpec.describe 'invariant', type: :bash do
     RSpec::Bash::Script.new <<-EOF
       #{imports}
 
-      invariant true "nope!"
+      invariant $(true) "nope!"
     EOF
   }
 
@@ -21,7 +21,7 @@ RSpec.describe 'invariant', type: :bash do
     RSpec::Bash::Script.new <<-EOF
       #{imports}
 
-      invariant false "nope!"
+      invariant $(false) "nope!"
     EOF
   }
 
@@ -46,7 +46,7 @@ RSpec.describe 'invariant', type: :bash do
           RSpec::Bash::Script.new <<-EOF
             #{imports}
 
-            invariant ! test -z "" "nope!"
+            invariant $(test ! -z "") "nope!"
           EOF
         )
       ).to be false
@@ -56,7 +56,7 @@ RSpec.describe 'invariant', type: :bash do
           RSpec::Bash::Script.new <<-EOF
             #{imports}
 
-            invariant test -n "asdf" "nope!"
+            invariant $(test -n "asdf") "nope!"
           EOF
         )
       ).to be true
@@ -68,7 +68,7 @@ RSpec.describe 'invariant', type: :bash do
           RSpec::Bash::Script.new <<-EOF
             #{imports}
 
-            invariant [ ! -z "" ] "nope!"
+            invariant $([ ! -z "" ]) "nope!"
           EOF
         )
       ).to be false
@@ -78,7 +78,7 @@ RSpec.describe 'invariant', type: :bash do
           RSpec::Bash::Script.new <<-EOF
             #{imports}
 
-            invariant [ -n "asdf" ] "nope!"
+            invariant $([ -n "asdf" ]) "nope!"
           EOF
         )
       ).to be true
@@ -89,19 +89,17 @@ RSpec.describe 'invariant', type: :bash do
     # the function calls causing the [[ keyword operator itself to break
     # since the expression is then malformed)
     it 'using the "[[" operator, it evaluates falseys' do
-      skip 'cannot support it reliably'
-
       samples = []
       samples.push RSpec::Bash::Script.new <<-EOF
         #{imports}
 
-        invariant [[ ! -z "" ]] "nope!"
+        invariant $([[ ! -z "" ]]) "nope!"
       EOF
 
       samples.push RSpec::Bash::Script.new <<-EOF
         #{imports}
 
-        invariant ! [[ -z "" ]] "nope!"
+        invariant $([[ ! -z "" ]]) "nope!"
       EOF
 
       samples.each do |subject|
@@ -111,19 +109,17 @@ RSpec.describe 'invariant', type: :bash do
     end
 
     it 'using the "[[" operator, it evaluates truthies' do
-      skip 'cannot support it reliably'
-
       samples = []
       samples.push RSpec::Bash::Script.new <<-EOF
         #{imports}
 
-        invariant [[ -n "foo" ]] "nope!"
+        invariant $([[ -n "foo" ]]) "nope!"
       EOF
 
       samples.push RSpec::Bash::Script.new <<-EOF
         #{imports}
 
-        invariant ! [[ -n "" ]] "nope!"
+        invariant $([[ ! -n "" ]]) "nope!"
       EOF
 
       samples.each do |subject|

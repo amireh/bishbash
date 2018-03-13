@@ -17,15 +17,17 @@ function stacktrace.print() {
     stacktrace.clean
   fi
 
-  printf "\nStack trace:\n\n"
+  printf "\nStack trace:\n\n" 1>&2
 
   for frame in `seq 1 3 ${#stack[@]}`; do
     local line="${stack[frame -1]}"
     local func="${stack[frame + 0]}"
     local file=$(echo "${stack[frame + 1]}" | sed -e 's|'"$(pwd)"'/|./|')
 
-    tty.columnize "$(tty.lpad "${func}" 20)" "${file}:${line}" 20 $(tput cols)
+    tty.columnize "$(tty.lpad "${func}" 20)" "${file}:${line}" 20 $(tput cols) 1>&2
   done
+
+  printf "\n" 1>&2
 }
 
 # (): void
