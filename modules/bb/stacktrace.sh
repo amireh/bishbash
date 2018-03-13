@@ -1,15 +1,15 @@
-bb.import "bb/at_exit.sh"
-bb.import "bb/tty.sh"
+import "bb/at_exit.sh"
+import "bb/tty.sh"
 
 # we have to go through a file since the the stack may be traced from a
 # different subshell which won't have (write) access to this variable
-export __bb_stacktrace_file=$(mktemp '/tmp/bash-stacktrace-helper.XXXXXXXXX')
+export __stacktrace_file=$(mktemp '/tmp/bash-stacktrace-helper.XXXXXXXXX')
 
-bb.at_exit "stacktrace.clean"
+at_exit "stacktrace.clean"
 
 # (): void
 function stacktrace.print() {
-  local stack=( $(cat "${__bb_stacktrace_file}") )
+  local stack=( $(cat "${__stacktrace_file}") )
 
   if test "${#stack[@]}" -eq 0; then
     return 0
@@ -30,16 +30,16 @@ function stacktrace.print() {
 
 # (): void
 function stacktrace.track() {
-  printf "" > "${__bb_stacktrace_file}"
+  printf "" > "${__stacktrace_file}"
 
-  caller 0 >> "${__bb_stacktrace_file}"
-  caller 1 >> "${__bb_stacktrace_file}"
-  caller 2 >> "${__bb_stacktrace_file}"
+  caller 0 >> "${__stacktrace_file}"
+  caller 1 >> "${__stacktrace_file}"
+  caller 2 >> "${__stacktrace_file}"
 }
 
 # @private
 #
 # (): void
 function stacktrace.clean() {
-  rm -f -- "${__bb_stacktrace_file}"
+  rm -f -- "${__stacktrace_file}"
 }
