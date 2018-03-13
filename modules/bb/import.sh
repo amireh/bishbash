@@ -1,7 +1,13 @@
-declare -a __import_paths=(".")
-declare -a __import_imported=()
-declare -a __import_package_names=()
-declare -a __import_package_sources=()
+declare -ga __import_paths=(".")
+declare -ga __import_imported=()
+declare -ga __import_package_names=()
+declare -ga __import_package_sources=()
+declare -g  __import_pedantic=false
+declare -g  __import_home="${BISHBASH_HOME}"
+
+if [[ -z "${__import_home}" ]]; then
+  __import_home=~/'.bishbash'
+fi
 
 # source a shell script at most once
 function import() {
@@ -16,12 +22,21 @@ function import() {
 
   if [[ -z "${module}" || ! -s "${module}" ]]; then
     (1>&2 echo "import: cannot find module \"${script}\"")
+
+    if [[ $__import_pedantic ]]; then
+      exit 1
+    fi
+
     return 1
   fi
 
   source "${module}" || return $?
 
   __import_imported+=( "${script}" )
+}
+
+function import.pedantic() {
+  __import_pedantic=$1
 }
 
 # (): void
@@ -119,6 +134,15 @@ function import.__resolve_module_in_package() {
         continue
       fi
 
+      local pkg_source="${__import_package_sources[i]}"
+
+      resolved=$(import.__resolve_module_from_github "${script}" "${pkg_source}")
+
+      if [[ $? -eq 0 ]]; then
+        echo "${resolved}"
+        return 0
+      fi
+
       resolved="${__import_package_sources[i]}/${script}"
 
       if [[ -f "${resolved}" ]]; then
@@ -129,4 +153,56 @@ function import.__resolve_module_in_package() {
   fi
 
   return 1
+}
+
+function import.__resolve_module_from_github() {
+  local script="${1}"
+  local pkg_source="${2}"
+  local pkg_refurl_re="github:(.+)/(.+)#(.+)"
+
+  if [[ ! "${pkg_source}" =~ $pkg_refurl_re ]]; then
+    return 1
+  fi
+
+  local gh_user="${BASH_REMATCH[1]}"
+  local gh_repo="${BASH_REMATCH[2]}"
+  local gh_tree="${BASH_REMATCH[3]}"
+  local gh_url="https://raw.githubusercontent.com/${gh_user}/${gh_repo}/${gh_tree}/modules/${script}"
+  local gh_url_digest=$(import.__calculate_digest "${gh_url}")
+  local disk_path="${__import_home}/modules/${gh_url_digest}.sh"
+
+  if [ ! -d "${__import_home}/modules" ]; then
+    mkdir -p "${__import_home}/modules"
+  fi
+
+  if [ ! -s "${disk_path}" ]; then
+    echo "import: downloading script \"${script}\" from github:" 1>&2
+    echo "import:     ${gh_url}" 1>&2
+
+    curl -sS -f "${gh_url}" 1> "${disk_path}" || {
+      echo "import: could not retrieve module from github" 1>&2
+
+      return 1
+    }
+  fi
+
+  echo "${disk_path}"
+}
+
+# @private
+#
+# (String): String
+function import.__calculate_digest() {
+  if which sha256sum >/dev/null; then
+    echo "${1}" | sha256sum | cut -d' ' -f1
+  elif which sha1sum >/dev/null; then
+    echo "${1}" | sha1sum | cut -d' ' -f1
+  elif which md5sum >/dev/null; then
+    echo "${1}" | md5sum | cut -d' ' -f1
+  else
+    echo "import: unable to calculate digest, please ensure you have" 1>&2
+    echo "        any of the following programs installed: sha256sum, sha1sum, md5sum" 1>&2
+
+    exit 1
+  fi
 }

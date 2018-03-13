@@ -22,9 +22,9 @@ function stacktrace.print() {
   for frame in `seq 1 3 ${#stack[@]}`; do
     local line="${stack[frame -1]}"
     local func="${stack[frame + 0]}"
-    local file=$(echo "${stack[frame + 1]}" | sed -e 's|'"$(pwd)"'/||')
+    local file=$(echo "${stack[frame + 1]}" | sed -e 's|'"$(pwd)"'/|./|')
 
-    tty.columnize "$(tty.lpad "${func}" 20)" "${file}:${line}"
+    tty.columnize "$(tty.lpad "${func}" 20)" "${file}:${line}" 20 $(tput cols)
   done
 }
 
@@ -35,6 +35,8 @@ function stacktrace.track() {
   caller 0 >> "${__stacktrace_file}"
   caller 1 >> "${__stacktrace_file}"
   caller 2 >> "${__stacktrace_file}"
+  caller 3 >> "${__stacktrace_file}"
+  caller 4 >> "${__stacktrace_file}"
 }
 
 # @private

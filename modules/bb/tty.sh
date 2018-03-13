@@ -32,7 +32,7 @@ function tty.columnize() {
   local key="${1}"
   local value="${2}"
   local keycol_sz="${3:-18}"
-  local valcol_sz=$(( 72 - $keycol_sz ))
+  local valcol_sz=$(( ${4:-72} - $keycol_sz ))
   local IFS=$'\n'
   local lines=( $(printf "${value}" | fold -s -w $valcol_sz) )
   local printf_key="%-${keycol_sz}s"
