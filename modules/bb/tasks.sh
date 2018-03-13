@@ -34,7 +34,7 @@ function tasks.abort() {
 
 # @private
 function tasks.ensure_task_is_defined() {
-  invariant array.contains "${__tasks_names[@]}" "${1}" "Unrecognized task \"${1}\"."
+  invariant $(array.contains "${__tasks_names[@]}" "${1}") "Unrecognized task \"${1}\"."
 }
 
 # @private
@@ -48,7 +48,7 @@ function tasks.run() {
 
   local task_fn=$@
 
-  printf "$header STARTING\n"
+  printf "$header STARTING\n" 1>&2
 
   # eval tasks in a subshell to avoid side effects like `cd` and allow them to
   # `exec` for convenience
@@ -59,16 +59,16 @@ function tasks.run() {
   local exit_status=${PIPESTATUS[0]}
 
   if [ $exit_status != 0 ]; then
-    printf "$header ${TTY_RED}FAILED!${TTY_RESET} (exit code ${exit_status})\n"
+    printf "$header ${TTY_RED}FAILED!${TTY_RESET} (exit code ${exit_status})\n" 1>&2
 
     stacktrace.print
 
     exit $exit_status
   else
-    printf "$header ${TTY_GREEN}OK${TTY_RESET}\n"
+    printf "$header ${TTY_GREEN}OK${TTY_RESET}\n" 1>&2
   fi
 
-  printf "\n"
+  printf "\n" 1>&2
 }
 
 

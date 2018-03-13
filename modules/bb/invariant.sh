@@ -7,7 +7,8 @@ function invariant() {
   local message="${@:$#:1}"
 
   if [[ "${#@}" -gt 1 ]]; then
-    printf "${TTY_RED}invariant: wrong number of arguments, expecting 1 (a message)${TTY_RESET}\n" 1>&2
+    printf "${TTY_RED}invariant: wrong number of arguments (%d), expected 1${TTY_RESET}\n" \
+      "${#@}" 1>&2
 
     stacktrace.track
     stacktrace.print

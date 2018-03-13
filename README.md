@@ -1,3 +1,8 @@
+# bishbash
+
+A flexible `import` routine for bash that makes it easy to share and reuse
+modules.
+
 ## Conventions
 
 - Modules must be placed inside a `modules/` directory.
