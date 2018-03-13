@@ -1,11 +1,11 @@
-RSpec.describe 'bb.at_exit', type: :bash do
+RSpec.describe 'at_exit', type: :bash do
   let(:module_path) { BishBashSupport.module_path('bb/at_exit.sh') }
 
   subject {
     RSpec::Bash::Script.new <<-EOF
       source "#{module_path}"
 
-      bb.at_exit "echo 'done!'"
+      at_exit "echo 'done!'"
     EOF
   }
 

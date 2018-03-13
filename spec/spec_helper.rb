@@ -35,7 +35,7 @@ RSpec.configure do |config|
   config.include BishBashSupport, type: :bash
 
   RSpec::Bash.configure do |bash|
-    # bash.throttle = 0
+    bash.throttle = 10 / 1000
   end
 
   # rspec-expectations config goes here. You can use an alternate

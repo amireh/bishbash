@@ -1,12 +1,12 @@
-RSpec.describe 'bb.platform', type: :bash do
+RSpec.describe 'platform', type: :bash do
   let(:module_path) { BishBashSupport.module_path('bb/platform.sh') }
 
   describe '.is_function_available' do
-    it 'returns true if the function is usable in the current shell' do
+    it 'returns true if the function is defined in the current shell' do
       subject = RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.platform.is_function_available "__foobarbaz__"
+        platform.is_function_available "__foobarbaz__"
       EOF
 
       expect(run_script(subject)).to be false
@@ -18,7 +18,7 @@ RSpec.describe 'bb.platform', type: :bash do
           return 0
         }
 
-        bb.platform.is_function_available "__foobarbaz__"
+        platform.is_function_available "__foobarbaz__"
       EOF
 
       expect(run_script(subject)).to be true
@@ -30,7 +30,7 @@ RSpec.describe 'bb.platform', type: :bash do
       subject = RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.platform.is_command_available "__foobarbaz__"
+        platform.is_command_available "__foobarbaz__"
       EOF
 
       expect(subject).to receive(:which).with_args("__foobarbaz__").and_return(1)
@@ -43,7 +43,7 @@ RSpec.describe 'bb.platform', type: :bash do
       RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.platform.source_profile
+        platform.source_profile
       EOF
     }
 

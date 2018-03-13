@@ -1,12 +1,12 @@
-RSpec.describe 'bb.array', type: :bash do
+RSpec.describe 'array', type: :bash do
   let(:module_path) { BishBashSupport.module_path('bb/array.sh') }
 
-  describe 'bb.array.last' do
+  describe 'array.last' do
     subject {
       RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.array.last "$@"
+        array.last "$@"
       EOF
     }
 
@@ -23,12 +23,12 @@ RSpec.describe 'bb.array', type: :bash do
     end
   end
 
-  describe 'bb.array.tail' do
+  describe 'array.tail' do
     subject {
       RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.array.tail "$@"
+        array.tail "$@"
       EOF
     }
 
@@ -45,12 +45,12 @@ RSpec.describe 'bb.array', type: :bash do
     end
   end
 
-  describe 'bb.array.contains' do
+  describe 'array.contains' do
     subject {
       RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.array.contains "$@"
+        array.contains "$@"
       EOF
     }
 

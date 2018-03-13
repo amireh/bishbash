@@ -1,4 +1,4 @@
-RSpec.describe 'bb.import', type: :bash do
+RSpec.describe 'import', type: :bash do
   let(:module_path) { BishBashSupport.module_path('bb/import.sh') }
 
   describe '.relpath' do
@@ -6,25 +6,30 @@ RSpec.describe 'bb.import', type: :bash do
       subject = RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.import "#{BishBashSupport.fixture_path("relpath_import.sh")}"
+        import "#{BishBashSupport.fixture_path("relpath_import.sh")}"
       EOF
 
       run_script subject, []
 
-      expect(subject.stdout).to eq("#{BishBashSupport.fixture_path('../support/array_spec.rb')}\n")
+      expect(subject.stdout.lines).to eq([
+        "#{BishBashSupport.fixture_path('../support/array_spec.rb')}\n",
+        "#{BishBashSupport.fixture_path('../')}\n",
+        "#{BishBashSupport.fixture_path('../../')}\n",
+        "#{BishBashSupport.fixture_path('~/foo')}\n",
+        "/tmp/foo\n",
+      ])
     end
   end
 
   describe '.import' do
-
     subject {
       RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.import "#{BishBashSupport.fixture_path("a.sh")}"
-        bb.import "#{BishBashSupport.fixture_path("a.sh")}"
+        import "#{BishBashSupport.fixture_path("a.sh")}"
+        import "#{BishBashSupport.fixture_path("a.sh")}"
 
-        bb.import "#{BishBashSupport.fixture_path("b.sh")}"
+        import "#{BishBashSupport.fixture_path("b.sh")}"
       EOF
     }
 
@@ -47,7 +52,7 @@ RSpec.describe 'bb.import', type: :bash do
       subject = RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.import "non-existent-file.sh"
+        import "non-existent-file.sh"
       EOF
 
       expect(subject).to (
@@ -59,7 +64,7 @@ RSpec.describe 'bb.import', type: :bash do
       run_script subject
 
       expect(subject.exit_code).to eq(1)
-      expect(subject.stderr).to include('Unable to import "non-existent-file.sh": file not found')
+      expect(subject.stderr).to include('import: cannot find module "non-existent-file.sh"')
 
     end
 
@@ -67,7 +72,7 @@ RSpec.describe 'bb.import', type: :bash do
       subject = RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.import "#{BishBashSupport.fixture_path("fails.sh")}"
+        import "#{BishBashSupport.fixture_path("fails.sh")}"
       EOF
 
       expect(subject).to (
@@ -87,8 +92,8 @@ RSpec.describe 'bb.import', type: :bash do
       subject = RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.import "#{BishBashSupport.fixture_path("a.sh")}"
-        bb.import "#{BishBashSupport.fixture_path("a.sh")}"
+        import "#{BishBashSupport.fixture_path("a.sh")}"
+        import "#{BishBashSupport.fixture_path("a.sh")}"
       EOF
 
       run_script subject
@@ -102,8 +107,8 @@ RSpec.describe 'bb.import', type: :bash do
       RSpec::Bash::Script.new <<-EOF
         source "#{module_path}"
 
-        bb.import.add_package 'bb' '#{BishBashSupport.modules_path}'
-        bb.import "bb/at_exit.sh"
+        import.add_package 'bb' '#{BishBashSupport.modules_path}'
+        import "bb/at_exit.sh"
       EOF
     }
 

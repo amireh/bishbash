@@ -6,7 +6,7 @@ export TTY_UNDERLINE="\033[4m"
 export TTY_RESET="\033[0m"
 
 # (): void
-function bb.tty.disable_colors() {
+function tty.disable_colors() {
   TTY_YELLOW=''
   TTY_GREEN=''
   TTY_RED=''
@@ -14,7 +14,7 @@ function bb.tty.disable_colors() {
 }
 
 # (String, Number): String
-function bb.tty.lpad() {
+function tty.lpad() {
   local str=$1
   local size=$2
   local delta=$(( $size - ${#str} ))
@@ -28,7 +28,7 @@ function bb.tty.lpad() {
 }
 
 # (shortdesc: String, longdesc: String, keycol_sz: Number = 24): void
-function bb.tty.columnize() {
+function tty.columnize() {
   local key="${1}"
   local value="${2}"
   local keycol_sz="${3:-18}"
@@ -47,22 +47,22 @@ function bb.tty.columnize() {
 }
 
 # (Array<Tuple<shortdesc: String, longdesc: String>>): void
-function bb.tty.print_columnized_list() {
+function tty.print_columnized_list() {
   local i=""
   local list=("$@")
   local indent="  "
 
   for i in `seq 0 2 ${#@}`; do
-    bb.tty.columnize "${indent}${list[i]}" "${list[i+1]}"
+    tty.columnize "${indent}${list[i]}" "${list[i+1]}"
   done
 }
 
 # (): String
-function bb.tty.progname() {
+function tty.progname() {
   echo $(basename $0)
 }
 
 # (String): String
-function bb.tty.print_error() {
-  printf "%s: ${TTY_RED}[error]${TTY_RESET} %s\n" $(bb.tty.progname) "${1}" 1>&2
+function tty.print_error() {
+  printf "%s: ${TTY_RED}[error]${TTY_RESET} %s\n" $(tty.progname) "${1}" 1>&2
 }
