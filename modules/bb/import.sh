@@ -154,7 +154,9 @@ function import.__resolve_module_in_package() {
 function import.__resolve_module_from_github() {
   local script="${1}"
   local pkg_source="${2}"
-  local pkg_refurl_re="github:(.+)/(.+)#(.+)"
+  local pkg_refurl_re="github:(.+)/(.+)#(.+)(/.+)?"
+  #                           ---- ---- ---- ----
+  #                           user repo tree path
 
   if [[ ! $pkg_source =~ $pkg_refurl_re ]]; then
     return 1
@@ -163,7 +165,8 @@ function import.__resolve_module_from_github() {
   local gh_user="${BASH_REMATCH[1]}"
   local gh_repo="${BASH_REMATCH[2]}"
   local gh_tree="${BASH_REMATCH[3]}"
-  local gh_url="https://raw.githubusercontent.com/${gh_user}/${gh_repo}/${gh_tree}/modules/${script}"
+  local gh_path="${BASH_REMATCH[4]}"
+  local gh_url="https://raw.githubusercontent.com/${gh_user}/${gh_repo}/${gh_tree}${gh_path}/${script}"
   local gh_url_digest=$(import.__calculate_digest "${gh_url}")
 
   if [[ -z $gh_url_digest ]]; then

@@ -198,7 +198,7 @@ RSpec.describe 'import', type: :bash do
 
         source "#{module_path}"
 
-        import.add_package 'bb' 'github:amireh/bishbash#43465dc4029194d6b8571de1d00a0a5564a736f5'
+        import.add_package 'bb' 'github:amireh/bishbash#43465dc4029194d6b8571de1d00a0a5564a736f5/modules'
         import.checksum shasum
 
         $@
