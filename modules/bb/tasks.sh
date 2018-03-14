@@ -3,14 +3,14 @@ import "bb/invariant.sh"
 import "bb/stacktrace.sh"
 import "bb/tty.sh"
 
-declare    __tasks_bail="0"
-declare -a __tasks_blacklist=()
-declare -a __tasks_custom_options=()
-declare    __tasks_latest=""
-declare    __tasks_latest_description=""
-declare -a __tasks_names=()
-declare    __tasks_wants_help=false
-declare -a __tasks_whitelist=()
+__tasks_bail=true
+__tasks_blacklist=()
+__tasks_custom_options=()
+__tasks_latest=""
+__tasks_latest_description=""
+__tasks_names=()
+__tasks_wants_help=false
+__tasks_whitelist=()
 
 function tasks.define() {
   __tasks_names+=("${1}")
@@ -78,7 +78,7 @@ function tasks.run() {
 #     tasks.read_wants $@
 #     shift $?
 function tasks.read_wants() {
-  while getopts ":s:o:Chb" opt
+  while getopts ":s:o:Chr" opt
   do
     case $opt in
       s)
@@ -89,8 +89,8 @@ function tasks.read_wants() {
         tasks.ensure_task_is_defined "${OPTARG}"
         __tasks_whitelist+=("${OPTARG}")
       ;;
-      b)
-        __tasks_bail="1"
+      r)
+        __tasks_bail=false
       ;;
       C)
         tty.disable_colors
@@ -145,7 +145,7 @@ function tasks.run_all() {
 
       exit_status=$?
 
-      if [[ $exit_status -ne 0 && $__tasks_bail == "1" ]]; then
+      if [[ $exit_status -ne 0 && $__tasks_bail == true ]]; then
         break
       fi
     fi

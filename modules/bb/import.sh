@@ -1,9 +1,9 @@
-declare -a __import_paths=(".")
-declare -a __import_imported=()
-declare -a __import_package_names=()
-declare -a __import_package_sources=()
-declare    __import_pedantic=false
-declare    __import_home="${BISHBASH_HOME}"
+__import_paths=()
+__import_imported=()
+__import_package_names=()
+__import_package_sources=()
+__import_pedantic=false
+__import_home="${BISHBASH_HOME}"
 
 if [[ -z "${__import_home}" ]]; then
   __import_home=~/'.bishbash'
