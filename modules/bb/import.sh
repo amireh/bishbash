@@ -192,6 +192,10 @@ function import.__resolve_module_from_github() {
 
       return 1
     }
+
+    printf '[%s] "%s" (%s) => (%s)\n' \
+      "$(date '+%D %T%z')" "${script}" "${gh_url}" "${disk_path}" \
+      >> "$( import.__manifest_path )"
   fi
 
   echo "${disk_path}"
@@ -214,4 +218,9 @@ function import.__calculate_digest() {
   else
     return 1
   fi
+}
+
+# @private
+function import.__manifest_path() {
+  echo "${__import_home}/modules/manifest.txt"
 }

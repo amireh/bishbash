@@ -256,6 +256,23 @@ RSpec.describe 'import', type: :bash do
       expect(File.read(mod_filepath)).to eq "#{mod_contents}\n"
     end
 
+    it 'logs downloaded files in the manifest' do
+      expect(subject).to receive(:curl).once.and_yield { |*|
+        <<-EOF
+          echo "#{mod_contents}"
+          return 0
+        EOF
+      }
+
+      run_script(subject, ["import", mod_id])
+
+      manifest = File.read("#{home}/modules/manifest.txt")
+
+      expect(manifest).to include(
+        "\"#{mod_id}\" (#{mod_url}) => (#{mod_filepath})\n"
+      )
+    end
+
     it 'loads them from disk if it finds them' do
       File.write(mod_filepath, mod_contents)
 
