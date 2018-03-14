@@ -65,7 +65,7 @@ function import.resolve() {
   local path="${over_there}/${1}"
 
   # remove all /./ sequences.
-  path="${path//\/.\//\/}"
+  path="${path//\/\.\///}"
 
   # remove dir/.. sequences.
   while [[ "${path}" =~ ([^/][^/]*/\.\./) ]]; do

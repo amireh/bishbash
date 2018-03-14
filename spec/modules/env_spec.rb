@@ -49,7 +49,7 @@ RSpec.describe 'env', type: :bash do
 
     it 'tries to source "~/.bash_profile" first' do
       expect(subject).to (
-        test('-e')
+        test_by('-e')
           .with_args(File.expand_path("~/.bash_profile"))
           .and_return 0
       )
@@ -69,32 +69,31 @@ RSpec.describe 'env', type: :bash do
 
     it 'tries to source "~/.profile" if bash-specific profile is not found' do
       expect(subject).to (
-        test('-e')
-          .with_args(File.expand_path("~/.bash_profile"))
-          .with_args(File.expand_path("~/.profile"))
-          .and_yield { |x| x =~ /\.bash_profile/ ? "return 1" : "return 0" }
+        test_by('-e')
+          .twice
+          .with_args(File.expand_path("~/.bash_profile")).and_return(1)
+          .with_args(File.expand_path("~/.profile")).and_return(0)
       )
 
       expect(subject).to (
         receive(:source)
           .twice
-          .with_args(module_path)
-          .with_args(File.expand_path("~/.profile"))
-          .and_yield(subshell: false) { |x|
-            x =~ /\.profile/ ? "return 0" : "builtin source '#{x}'"
+          .with_args(module_path).and_yield(subshell: false) { |x| <<-EOF
+              builtin source "#{x}"
+            EOF
           }
+          .with_args(File.expand_path("~/.profile")).and_return(0)
       )
 
-      expect(run_script(subject)).to be true
+      expect(run_script(subject, [], verbose: true)).to be true
     end
 
     it 'tries to source "/etc/profile" if no user-specific profile is not found' do
       expect(subject).to (
-        test('-e')
-          .with_args(File.expand_path("~/.bash_profile"))
-          .with_args(File.expand_path("~/.profile"))
-          .with_args(File.expand_path("/etc/profile"))
-          .and_yield { |x| x == '/etc/profile' ? 'return 0' : 'return 1' }
+        test_by('-e')
+          .with_args(File.expand_path("~/.bash_profile")).and_return(1)
+          .with_args(File.expand_path("~/.profile")).and_return(1)
+          .with_args(File.expand_path("/etc/profile")).and_return(0)
       )
 
       expect(subject).to (
@@ -112,12 +111,11 @@ RSpec.describe 'env', type: :bash do
 
     it 'returns false if no profile was found' do
       expect(subject).to (
-        test('-e')
+        test_by('-e')
           .thrice
-          .with_args(File.expand_path("~/.bash_profile"))
-          .with_args(File.expand_path("~/.profile"))
-          .with_args(File.expand_path("/etc/profile"))
-          .and_return 1
+          .with_args(File.expand_path("~/.bash_profile")).and_return(1)
+          .with_args(File.expand_path("~/.profile")).and_return(1)
+          .with_args(File.expand_path("/etc/profile")).and_return(1)
       )
 
       expect(subject).to (

@@ -1,7 +1,7 @@
 PATH
   remote: ../rspec-bash
   specs:
-    rspec-bash (1.0.0)
+    rspec-bash-x (1.1.0)
       rspec-mocks (~> 3.6)
       rspec-support (~> 3.6)
 
@@ -34,7 +34,7 @@ PLATFORMS
 DEPENDENCIES
   pry
   rspec
-  rspec-bash!
+  rspec-bash-x!
 
 BUNDLED WITH
    1.14.6

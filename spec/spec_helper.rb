@@ -25,6 +25,10 @@ RSpec.configure do |config|
       File.expand_path("../../modules/#{name}", __FILE__)
     end
 
+    def self.tmp_path(name)
+      File.expand_path("../../tmp/#{name}", __FILE__)
+    end
+
     def self.fixture_path(name)
       File.expand_path("../fixtures/#{name}", __FILE__)
     end
@@ -36,6 +40,7 @@ RSpec.configure do |config|
 
   RSpec::Bash.configure do |bash|
     bash.throttle = 10 / 1000
+    bash.verbose = ENV['VERBOSE'] == '1'
   end
 
   # rspec-expectations config goes here. You can use an alternate

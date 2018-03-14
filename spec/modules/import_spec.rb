@@ -1,29 +1,76 @@
 RSpec.describe 'import', type: :bash do
   let(:module_path) { BishBashSupport.module_path('bb/import.sh') }
 
-  describe '.relpath' do
-    it 'does its thing' do
-      subject = RSpec::Bash::Script.new <<-EOF
-        source "#{module_path}"
+  describe 'import.resolve' do
+    path = BishBashSupport.tmp_path('resolve-spec/script.sh')
+    root = File.expand_path('../../../', path)
+    dir = File.dirname(path)
 
-        import "#{BishBashSupport.fixture_path("relpath_import.sh")}"
-      EOF
+    samples = [
+      {
+        input: './',
+        output: "#{root}/tmp/resolve-spec"
+      },
+      {
+        input: '../',
+        output: "#{root}/tmp"
+      },
+      {
+        input: '../../',
+        output: "#{root}"
+      },
+      {
+        input: './foo',
+        output: "#{root}/tmp/resolve-spec/foo"
+      },
+      {
+        input: '../foo',
+        output: "#{root}/tmp/foo"
+      },
+      {
+        input: '../foo/a',
+        output: "#{root}/tmp/foo/a"
+      },
+      {
+        input: '~/foo',
+        output: "#{root}/tmp/resolve-spec/~/foo"
+      },
+      {
+        input: '/foo',
+        output: '/foo'
+      },
+    ]
 
-      run_script subject, []
+    samples.each do |input:, output:|
+      before(:each) do
+        FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+      end
 
-      expect(subject.stdout.lines).to eq([
-        "#{BishBashSupport.fixture_path('../support/array_spec.rb')}\n",
-        "#{BishBashSupport.fixture_path('../')}\n",
-        "#{BishBashSupport.fixture_path('../../')}\n",
-        "#{BishBashSupport.fixture_path('~/foo')}\n",
-        "/tmp/foo\n",
-      ])
+      after(:each) do
+        Dir.glob("#{dir}/*").each do |f|
+          File.unlink(f)
+        end
+
+        FileUtils.rmdir(dir)
+      end
+
+      it "works for '#{input}'" do
+        subject = a_script <<-EOF
+          source "#{module_path}"
+          import.resolve "#{input}"
+        EOF
+
+        run_script subject, [], file: File.new(path, 'w')
+
+        expect(subject.exit_code).to eq 0
+        expect(subject.stdout).to eq "#{output}\n"
+      end
     end
   end
 
   describe '.import' do
     subject {
-      RSpec::Bash::Script.new <<-EOF
+      a_script <<-EOF
         source "#{module_path}"
 
         import "#{BishBashSupport.fixture_path("a.sh")}"
@@ -49,7 +96,7 @@ RSpec.describe 'import', type: :bash do
     end
 
     it 'returns false if the script could not be found' do
-      subject = RSpec::Bash::Script.new <<-EOF
+      subject = a_script <<-EOF
         source "#{module_path}"
 
         import "non-existent-file.sh"
@@ -69,7 +116,7 @@ RSpec.describe 'import', type: :bash do
     end
 
     it 'returns false if the script could not be sourced' do
-      subject = RSpec::Bash::Script.new <<-EOF
+      subject = a_script <<-EOF
         source "#{module_path}"
 
         import "#{BishBashSupport.fixture_path("fails.sh")}"
@@ -89,7 +136,7 @@ RSpec.describe 'import', type: :bash do
     end
 
     it 'returns true if the script was already loaded' do
-      subject = RSpec::Bash::Script.new <<-EOF
+      subject = a_script <<-EOF
         source "#{module_path}"
 
         import "#{BishBashSupport.fixture_path("a.sh")}"
@@ -104,7 +151,7 @@ RSpec.describe 'import', type: :bash do
 
   describe '.import with package modules' do
     subject {
-      RSpec::Bash::Script.new <<-EOF
+      a_script <<-EOF
         source "#{module_path}"
 
         import.add_package 'bb' '#{BishBashSupport.modules_path}'

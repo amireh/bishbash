@@ -1,5 +1,0 @@
-import.resolve "../support/array_spec.rb"
-import.resolve "../"
-import.resolve "../../"
-import.resolve "~/foo"
-import.resolve "/tmp/foo"
