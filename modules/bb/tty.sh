@@ -1,16 +1,18 @@
-export TTY_YELLOW="\033[1;33m"
+export TTY_BOLD="\033[1m"
 export TTY_GREEN="\033[0;32m"
 export TTY_RED="\033[0;31m"
-export TTY_BOLD="\033[1m"
-export TTY_UNDERLINE="\033[4m"
 export TTY_RESET="\033[0m"
+export TTY_UNDERLINE="\033[4m"
+export TTY_YELLOW="\033[1;33m"
 
 # (): void
 function tty.disable_colors() {
-  TTY_YELLOW=''
+  TTY_BOLD=''
   TTY_GREEN=''
   TTY_RED=''
   TTY_RESET=''
+  TTY_UNDERLINE=''
+  TTY_YELLOW=''
 }
 
 # (String, Number): String

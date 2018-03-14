@@ -3,7 +3,6 @@ import "bb/invariant.sh"
 import "bb/stacktrace.sh"
 import "bb/tty.sh"
 
-__tasks_bail=true
 __tasks_blacklist=()
 __tasks_custom_options=()
 __tasks_latest=""
@@ -34,7 +33,9 @@ function tasks.abort() {
 
 # @private
 function tasks.ensure_task_is_defined() {
-  invariant $(array.contains "${__tasks_names[@]}" "${1}") "Unrecognized task \"${1}\"."
+  invariant \
+    $(array.contains "${__tasks_names[@]}" "${1}") \
+    "Unrecognized task \"${1}\"."
 }
 
 # @private
@@ -46,13 +47,17 @@ function tasks.run() {
   local script="${3}"
   local header="${TTY_YELLOW}[${name}]${TTY_RESET}"
 
-  # local task_fn=$@
-
   printf "$header STARTING\n" 1>&2
 
   # eval tasks in a subshell to avoid side effects like `cd` and allow them to
   # `exec` for convenience
-  ( import "${script}" && $hook 2>&1 ) | while IFS="" read line; do
+  (
+    import "${script}" || return 1
+
+    if tasks.is_hook_defined "${hook}"; then
+      $hook 2>&1
+    fi
+  ) | while IFS="" read line; do
     printf "$header %s\n" "${line}"
   done
 
@@ -88,9 +93,6 @@ function tasks.read_wants() {
       o)
         tasks.ensure_task_is_defined "${OPTARG}"
         __tasks_whitelist+=("${OPTARG}")
-      ;;
-      r)
-        __tasks_bail=false
       ;;
       C)
         tty.disable_colors
@@ -141,17 +143,9 @@ function tasks.run_all() {
 
   for task in "${__tasks_names[@]}"; do
     if tasks.wants "${task}"; then
-      tasks.run "${task}" "${stage}" "${task_path}/${task}.sh"
-
-      exit_status=$?
-
-      if [[ $exit_status -ne 0 && $__tasks_bail == true ]]; then
-        break
-      fi
+      tasks.run "${task}" "${stage}" "${task_path}/${task}.sh" || return $?
     fi
   done
-
-  return $exit_status
 }
 
 # (): void
@@ -168,7 +162,6 @@ function tasks.print_help() {
   local options=(
     "-o [TASK]" "run only the specified task(s)"
     "-s [TASK]" "skip the specified task(s)"
-    "-b"        "stop as soon as any task fails (e.g. bail)"
     "-C"        "do not colorize the output"
   )
 
