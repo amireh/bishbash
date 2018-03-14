@@ -179,4 +179,114 @@ RSpec.describe 'import', type: :bash do
       expect(subject.exit_code).to eq(0)
     end
   end
+
+  context "with a package from github" do
+    let(:home) { tmp_path('bishbash') }
+    let(:mod_id) { "bb/tty.sh" }
+    let(:mod_message) { 'hello from tty!' }
+    let(:mod_contents) { "echo '#{mod_message}'" }
+    let(:mod_url) { 'https://raw.githubusercontent.com/amireh/bishbash/43465dc4029194d6b8571de1d00a0a5564a736f5/modules/bb/tty.sh'}
+    let(:mod_filepath) { "#{home}/modules/97c9bb2eff110552455db26b8a0cb56e40d7f4f2.sh" }
+
+    before(:each) do
+      allow(subject).to receive(:curl).and_return 1
+    end
+
+    subject {
+      a_script <<-EOF
+        export BISHBASH_HOME="#{home}"
+
+        source "#{module_path}"
+
+        import.add_package 'bb' 'github:amireh/bishbash#43465dc4029194d6b8571de1d00a0a5564a736f5'
+        import.checksum shasum
+
+        $@
+      EOF
+    }
+
+    it 'rejects modules that do not identify as part of such packages' do
+      expect(subject).to receive(:curl).exactly(0)
+
+      expect(run_script(subject, ["import", "cc/yyy.sh"])).to eq false
+    end
+
+    it 'attempts to fetch them using curl' do
+      curl_args = nil
+
+      expect(subject).to receive(:curl).once.and_yield { |args|
+        curl_args = args
+
+        <<-EOF
+          return 1
+        EOF
+      }
+
+      expect(run_script(subject, ["import", mod_id])).to eq false
+
+      expect(curl_args).to include(mod_url)
+    end
+
+    it 'reports curl failures' do
+      expect(subject).to receive(:curl).once.and_yield { |*|
+        <<-EOF
+          echo 'cURL: 404 Not Found' 1>&2
+          return 1
+        EOF
+      }
+
+      expect(run_script(subject, ["import", mod_id])).to eq false
+      expect(subject.stderr).to include("cURL: 404 Not Found\n")
+    end
+
+    it 'stores them with their URL checkums for a name' do
+      expect(subject).to receive(:curl).once.and_yield { |*|
+        <<-EOF
+          echo "#{mod_contents}"
+          return 0
+        EOF
+      }
+
+      expect {
+        run_script(subject, ["import", mod_id])
+      }.to change {
+        File.exist?(mod_filepath)
+      }.from(false).to(true)
+
+      expect(File.read(mod_filepath)).to eq "#{mod_contents}\n"
+    end
+
+    it 'loads them from disk if it finds them' do
+      File.write(mod_filepath, mod_contents)
+
+      expect(subject).to receive(:curl).exactly(0)
+
+      expect(run_script(subject, ["import", mod_id])).to eq(true)
+      expect(subject.stdout).to include(mod_message)
+    end
+
+    it 'complains if it cannot find a program to checksum with' do
+      subject = a_script <<-EOF
+        export BISHBASH_HOME="#{home}"
+
+        source "#{module_path}"
+
+        import.add_package 'bb' 'github:amireh/bishbash#43465dc4029194d6b8571de1d00a0a5564a736f5'
+
+        $@
+      EOF
+
+      expect(subject).to receive(:curl).never
+      expect(subject).to (
+        receive(:which)
+          .with_args('sha256sum').once.and_return(1)
+          .with_args('sha1sum').once.and_return(1)
+          .with_args('shasum').once.and_return(1)
+          .with_args('md5sum').once.and_return(1)
+      )
+
+      expect(run_script(subject, ["import", mod_id])).to eq(false)
+      expect(subject.stderr).to include('import: unable to calculate digest')
+    end
+  end
 end

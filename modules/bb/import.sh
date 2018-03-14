@@ -1,9 +1,10 @@
-__import_paths=()
+__import_checksum_routine=""
+__import_home="${BISHBASH_HOME}"
 __import_imported=()
 __import_package_names=()
 __import_package_sources=()
 __import_pedantic=false
-__import_home="${BISHBASH_HOME}"
+__import_paths=()
 
 if [[ -z "${__import_home}" ]]; then
   __import_home=~/'.bishbash'
@@ -50,6 +51,11 @@ function import.add_package() {
   __import_package_sources+=("${2}")
 }
 
+# (command: String): void
+function import.checksum() {
+  __import_checksum_routine="$1"
+}
+
 # (String:) String
 #
 # Resolve a path to a file or a directory relative to the current script path.
@@ -79,35 +85,28 @@ function import.resolve() {
 }
 
 # @private
+#
+# (path: String): String?
 function import.__resolve_module() {
   local script="${1}"
 
-  if import.__resolve_module_on_disk "${script}"; then
-    return 0
-  elif import.__resolve_module_in_package "${script}"; then
-    return 0
-  else
-    return 1
-  fi
-}
-
-# @private
-function import.__resolve_module_on_disk() {
-  local script="${1}"
-  local resolved
-
-  # absolute path
+  # if it's absolute path we'll do nothing, even if the file doesn't exist
   if [[ "${script}" =~ ^/ ]]; then
     echo "${script}"
     return 0
   fi
 
-  # look through the modules on disk:
-  for path in "${__import_paths[@]}"; do
-    resolved="${path}/${script}"
+  import.__resolve_module_in_path "${script}" ||
+  import.__resolve_module_in_package "${script}"
+}
 
-    if test -f "${resolved}"; then
-      echo "${resolved}"
+# @private
+#
+# Look through the modules on disk registered using `import.path()`.
+function import.__resolve_module_in_path() {
+  for path in "${__import_paths[@]}"; do
+    if test -f "${path}/${1}"; then
+      echo "${path}/${1}"
       return 0
     fi
   done
@@ -120,39 +119,36 @@ function import.__resolve_module_in_package() {
   local script="${1}"
   local resolved
   local fragments
-  local pkg_id
+  local package
   local i
 
   # potentially a package module:
   IFS='/' fragments=( $(echo "${script}") )
 
-  pkg_id="${fragments[0]}"
+  package="${fragments[0]}"
 
-  if [[ "${#fragments[@]}" -gt 1 && " ${__import_package_names[@]} " =~ " ${pkg_id} " ]]; then
-    for i in "${!__import_package_names[@]}"; do
-      if [[ "${__import_package_names[i]}" != "${pkg_id}" ]]; then
-        continue
-      fi
-
-      local pkg_source="${__import_package_sources[i]}"
-
-      resolved=$(import.__resolve_module_from_github "${script}" "${pkg_source}")
-
-      if [[ $? -eq 0 ]]; then
-        echo "${resolved}"
-        return 0
-      fi
-
-      resolved="${__import_package_sources[i]}/${script}"
-
-      if [[ -f "${resolved}" ]]; then
-        echo "${resolved}"
-        return 0
-      fi
-    done
+  if [[ ${#fragments[@]} -lt 2 ]]; then
+    return 1
+  elif [[ ! " ${__import_package_names[@]} " =~ " ${package} " ]]; then
+    return 1
   fi
 
-  return 1
+  for i in "${!__import_package_names[@]}"; do
+    if [[ ${__import_package_names[i]} != ${package} ]]; then
+      continue
+    fi
+
+    local package_source="${__import_package_sources[i]}"
+
+    # file exists on disk?
+    if [[ -f "${package_source}/${script}" ]]; then
+      echo "${package_source}/${script}"
+      return 0
+    fi
+
+    # github mebbe?
+    import.__resolve_module_from_github "${script}" "${package_source}"
+  done
 }
 
 function import.__resolve_module_from_github() {
@@ -160,7 +156,7 @@ function import.__resolve_module_from_github() {
   local pkg_source="${2}"
   local pkg_refurl_re="github:(.+)/(.+)#(.+)"
 
-  if [[ ! "${pkg_source}" =~ $pkg_refurl_re ]]; then
+  if [[ ! $pkg_source =~ $pkg_refurl_re ]]; then
     return 1
   fi
 
@@ -169,6 +165,15 @@ function import.__resolve_module_from_github() {
   local gh_tree="${BASH_REMATCH[3]}"
   local gh_url="https://raw.githubusercontent.com/${gh_user}/${gh_repo}/${gh_tree}/modules/${script}"
   local gh_url_digest=$(import.__calculate_digest "${gh_url}")
+
+  if [[ -z $gh_url_digest ]]; then
+    printf "import: unable to calculate digest, please ensure you have\n" 1>&2
+    printf "        one of the following programs installed:\n" 1>&2
+    printf "        sha256sum, sha1sum, shasum, md5sum\n" 1>&2
+
+    return 1
+  fi
+
   local disk_path="${__import_home}/modules/${gh_url_digest}.sh"
 
   if [ ! -d "${__import_home}/modules" ]; then
@@ -193,7 +198,9 @@ function import.__resolve_module_from_github() {
 #
 # (String): String
 function import.__calculate_digest() {
-  if which sha256sum >/dev/null; then
+  if [[ -n $__import_checksum_routine ]]; then
+    echo "${1}" | $__import_checksum_routine | cut -d' ' -f1
+  elif which sha256sum >/dev/null; then
     echo "${1}" | sha256sum | cut -d' ' -f1
   elif which sha1sum >/dev/null; then
     echo "${1}" | sha1sum | cut -d' ' -f1
@@ -202,10 +209,6 @@ function import.__calculate_digest() {
   elif which md5sum >/dev/null; then
     echo "${1}" | md5sum | cut -d' ' -f1
   else
-    printf "import: unable to calculate digest, please ensure you have\n" 1>&2
-    printf "        any of the following programs installed:\n" 1>&2
-    printf "        sha256sum, sha1sum, shasum, md5sum" 1>&2
-
-    exit 1
+    return 1
   fi
 }

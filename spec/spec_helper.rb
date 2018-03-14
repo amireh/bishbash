@@ -18,8 +18,6 @@ require 'fileutils'
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
   module BishBashSupport
-    TMP_FILES = []
-
     def a_script_with_import(contents, color: false)
       with_import = <<-EOF
         source "#{BishBashSupport.module_path("bb/import.sh")}"
@@ -54,6 +52,7 @@ RSpec.configure do |config|
       File.expand_path("../fixtures/#{name}", __FILE__)
     end
 
+
     def tmp_path(name)
       BishBashSupport.tmp_path(name)
     end
@@ -62,8 +61,6 @@ RSpec.configure do |config|
       filepath = BishBashSupport.tmp_path(path)
 
       FileUtils.mkdir_p(File.dirname(filepath))
-
-      TMP_FILES.push(filepath)
 
       File.write(filepath, contents)
     end
@@ -74,11 +71,9 @@ RSpec.configure do |config|
   config.include BishBashSupport, type: :bash
 
   config.after(:each, type: :bash) do
-    BishBashSupport::TMP_FILES.each do |filepath|
-      File.unlink filepath if File.exist?(filepath)
+    Dir.glob(BishBashSupport.tmp_path('**/*')).each do |filepath|
+      File.unlink filepath if File.exist?(filepath) && !File.directory?(filepath)
     end
-
-    BishBashSupport::TMP_FILES.clear
   end
 
   RSpec::Bash.configure do |bash|
