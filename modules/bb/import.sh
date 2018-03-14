@@ -1,9 +1,9 @@
-declare -ga __import_paths=(".")
-declare -ga __import_imported=()
-declare -ga __import_package_names=()
-declare -ga __import_package_sources=()
-declare -g  __import_pedantic=false
-declare -g  __import_home="${BISHBASH_HOME}"
+declare -a __import_paths=(".")
+declare -a __import_imported=()
+declare -a __import_package_names=()
+declare -a __import_package_sources=()
+declare    __import_pedantic=false
+declare    __import_home="${BISHBASH_HOME}"
 
 if [[ -z "${__import_home}" ]]; then
   __import_home=~/'.bishbash'
@@ -197,12 +197,14 @@ function import.__calculate_digest() {
     echo "${1}" | sha256sum | cut -d' ' -f1
   elif which sha1sum >/dev/null; then
     echo "${1}" | sha1sum | cut -d' ' -f1
+  elif which shasum >/dev/null; then
+    echo "${1}" | shasum | cut -d' ' -f1
   elif which md5sum >/dev/null; then
     echo "${1}" | md5sum | cut -d' ' -f1
   else
     printf "import: unable to calculate digest, please ensure you have\n" 1>&2
     printf "        any of the following programs installed:\n" 1>&2
-    printf "        sha256sum, sha1sum, md5sum" 1>&2
+    printf "        sha256sum, sha1sum, shasum, md5sum" 1>&2
 
     exit 1
   fi

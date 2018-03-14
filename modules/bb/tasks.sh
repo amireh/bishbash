@@ -3,14 +3,14 @@ import "bb/invariant.sh"
 import "bb/stacktrace.sh"
 import "bb/tty.sh"
 
-declare -g  __tasks_bail=false
-declare -ga __tasks_blacklist=()
-declare -ga __tasks_custom_options=()
-declare -g  __tasks_latest=""
-declare -g  __tasks_latest_description=""
-declare -ga __tasks_names=()
-declare -g  __tasks_wants_help=false
-declare -ga __tasks_whitelist=()
+declare    __tasks_bail="0"
+declare -a __tasks_blacklist=()
+declare -a __tasks_custom_options=()
+declare    __tasks_latest=""
+declare    __tasks_latest_description=""
+declare -a __tasks_names=()
+declare    __tasks_wants_help=false
+declare -a __tasks_whitelist=()
 
 function tasks.define() {
   __tasks_names+=("${1}")
@@ -42,35 +42,33 @@ function tasks.ensure_task_is_defined() {
 # (name: String, ...args: Any): Boolean
 function tasks.run() {
   local name="${1}"
+  local hook="${2}"
+  local script="${3}"
   local header="${TTY_YELLOW}[${name}]${TTY_RESET}"
 
-  shift 1
-
-  local task_fn=$@
+  # local task_fn=$@
 
   printf "$header STARTING\n" 1>&2
 
   # eval tasks in a subshell to avoid side effects like `cd` and allow them to
   # `exec` for convenience
-  ( $task_fn 2>&1 ) | while IFS="" read line; do
+  ( import "${script}" && $hook 2>&1 ) | while IFS="" read line; do
     printf "$header %s\n" "${line}"
   done
 
   local exit_status=${PIPESTATUS[0]}
 
-  if [ $exit_status != 0 ]; then
+  if [[ $exit_status -ne 0 ]]; then
     printf "$header ${TTY_RED}FAILED!${TTY_RESET} (exit code ${exit_status})\n" 1>&2
 
     stacktrace.print
 
-    exit $exit_status
-  else
-    printf "$header ${TTY_GREEN}OK${TTY_RESET}\n" 1>&2
+    return $exit_status
   fi
 
+  printf "$header ${TTY_GREEN}OK${TTY_RESET}\n" 1>&2
   printf "\n" 1>&2
 }
-
 
 # (argv: Array): Number
 #
@@ -92,7 +90,7 @@ function tasks.read_wants() {
         __tasks_whitelist+=("${OPTARG}")
       ;;
       b)
-        __tasks_bail=true
+        __tasks_bail="1"
       ;;
       C)
         tty.disable_colors
@@ -141,23 +139,13 @@ function tasks.run_all() {
 
   invariant $(test -n "${task_path}") "task directory must be provided!"
 
-  shift 1
-
   for task in "${__tasks_names[@]}"; do
     if tasks.wants "${task}"; then
-      (
-        import "${task_path}/${task}.sh"
-
-        if test "${stage}" == "up" && tasks.is_hook_defined "up"; then
-          tasks.run "${task}:up" "up" $@
-        elif test "${stage}" == "down" && tasks.is_hook_defined "down"; then
-          tasks.run "${task}:down" "down" $@
-        fi
-      )
+      tasks.run "${task}" "${stage}" "${task_path}/${task}.sh"
 
       exit_status=$?
 
-      if [[ $exit_status -gt 0 && $__tasks_bail == "1" ]]; then
+      if [[ $exit_status -ne 0 && $__tasks_bail == "1" ]]; then
         break
       fi
     fi

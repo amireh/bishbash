@@ -1,3 +1,11 @@
+## 1.0.3
+
+- is now compatible with bash 3.2 (macOS Sierra)
+- `bb/nprintf.sh` a new contender for nice formatting of multiline messages
+- `bb/platform.sh` has been broken down into `bb/env.sh` for sniffing available
+  functions and commands in the environment as well as sourcing the profile,
+  and `bb/os.sh` for sniffing the host OS.
+
 ## 1.0.2
 
 - `bb/invariant.sh` no longer accepts a "predicate" as a string to be evaluated
