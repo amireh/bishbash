@@ -1,3 +1,10 @@
+## 1.1.0
+
+- import now supports relative paths, e.g. `import "../rel/path/to/module.sh"`
+- stracktrace.print will now exit with code 1 and do nothing if no strack file
+  exists
+- tty now exports `TTY_TICK` for a unicode tick
+
 ## 1.0.3
 
 - is now compatible with bash 3.2 (macOS Sierra)

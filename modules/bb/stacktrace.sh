@@ -9,6 +9,10 @@ at_exit "stacktrace.clean"
 
 # (): void
 function stacktrace.print() {
+  if [[ ! -f ${__stacktrace_file} ]]; then
+    return 1
+  fi
+
   local stack=( $(cat "${__stacktrace_file}") )
 
   if test "${#stack[@]}" -eq 0; then

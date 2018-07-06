@@ -4,6 +4,7 @@ export TTY_RED="\033[0;31m"
 export TTY_RESET="\033[0m"
 export TTY_UNDERLINE="\033[4m"
 export TTY_YELLOW="\033[1;33m"
+export TTY_TICK="✓"
 
 # (): void
 function tty.disable_colors() {

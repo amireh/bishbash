@@ -13,13 +13,18 @@ fi
 # source a shell script at most once
 function import() {
   local script="${1}"
+  local module
 
   # source only once
   if [[ " ${__import_imported[@]} " =~ " ${script} " ]]; then
     return 0
   fi
 
-  local module=$( import.__resolve_module "${script}" )
+  module=$( import.__resolve_module "${script}" )
+
+  if [[ -z "${module}" || ! -s "${module}" ]]; then
+    module=$( import.resolve "${script}" )
+  fi
 
   if [[ -z "${module}" || ! -s "${module}" ]]; then
     printf "import: cannot find module \"${script}\"\n" 1>&2
@@ -67,7 +72,16 @@ function import.resolve() {
     return 0
   fi
 
-  local over_there="$( cd "$( dirname "${BASH_SOURCE[1]}" )" && pwd )"
+  local over_there
+  local right_here="${BASH_SOURCE[0]}"
+
+  for i in {1..9}; do
+    if [[ ${BASH_SOURCE[i]} != ${right_here} ]]; then
+      over_there="$( cd "$( dirname "${BASH_SOURCE[i]}" )" && pwd )"
+      break
+    fi
+  done
+
   local path="${over_there}/${1}"
 
   # remove all /./ sequences.
