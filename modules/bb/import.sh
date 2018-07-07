@@ -82,6 +82,10 @@ function import.resolve() {
     fi
   done
 
+  if [[ -z ${over_there} ]]; then
+    return 1
+  fi
+
   local path="${over_there}/${1}"
 
   # remove all /./ sequences.
